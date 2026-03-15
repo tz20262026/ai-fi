@@ -32,7 +32,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
 
     await new Promise((r) => setTimeout(r, 600));
 
-    const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD;
+    const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD || "1234";
     if (password === correctPassword) {
       sessionStorage.setItem(SESSION_KEY, "true");
       setIsAuthenticated(true);
