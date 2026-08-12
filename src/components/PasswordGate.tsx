@@ -65,7 +65,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
               AI財務アドバイザー
             </h1>
             <p className="text-slate-400 text-sm mt-1">
-              Powered by Gemini 1.5 Pro
+              Powered by Gemini 2.5 Flash
             </p>
           </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Upload, Camera, FileText, ImageIcon, X } from "lucide-react";
+import { Upload, Camera, FileText, ImageIcon, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
@@ -12,6 +12,7 @@ interface FileUploadProps {
 export default function FileUpload({ onFileSelect, disabled }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -22,13 +23,14 @@ export default function FileUpload({ onFileSelect, disabled }: FileUploadProps) 
       const allowedExt = [".doc", ".docx", ".xls", ".xlsx", ".txt"];
       const extOk = allowedExt.some((ext) => name.endsWith(ext));
       if (!allowedMime.includes(file.type) && !extOk) {
-        alert("対応形式: PDF, Image, Word, Excel, Text");
+        setValidationError("対応形式: PDF, Image, Word, Excel, Text");
         return;
       }
       if (file.size > 20 * 1024 * 1024) {
-        alert("ファイルサイズは20MB以下にしてください");
+        setValidationError("ファイルサイズは20MB以下にしてください");
         return;
       }
+      setValidationError(null);
       setSelectedFile(file);
       onFileSelect(file);
     },
@@ -132,6 +134,13 @@ export default function FileUpload({ onFileSelect, disabled }: FileUploadProps) 
           }}
         />
       </div>
+
+      {validationError && (
+        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {validationError}
+        </div>
+      )}
 
       {/* Camera button */}
       <button

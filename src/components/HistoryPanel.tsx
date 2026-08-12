@@ -24,6 +24,8 @@ interface HistoryPanelProps {
   onRetryComplete: (data: { id: string; mode: string; rawText: string; parsedData: unknown; hasHistory: boolean; historyCount: number }) => void;
 }
 
+/** onRetry / onDelete はエラーメッセージ（あれば）を返す。呼び出し元でインライン表示するため */
+
 function formatDate(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -44,10 +46,12 @@ function HistoryCard({
   record: AnalysisRecord;
   onDelete: (id: string) => void;
   onRestore: (record: AnalysisRecord) => void;
-  onRetry: (id: string) => Promise<void>;
+  onRetry: (id: string) => Promise<string | null>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
   const modeConfig = CONSULTANT_MODES[record.mode as ConsultantMode];
   const statusConfig = STATUS_CONFIG[record.status] ?? STATUS_CONFIG.error;
   const isCompleted = record.status === "completed";
@@ -61,8 +65,13 @@ function HistoryCard({
 
   const handleRetry = async () => {
     setRetrying(true);
-    try { await onRetry(record.id); }
-    finally { setRetrying(false); }
+    setRetryError(null);
+    try {
+      const errorMessage = await onRetry(record.id);
+      if (errorMessage) setRetryError(errorMessage);
+    } finally {
+      setRetrying(false);
+    }
   };
 
   return (
@@ -90,12 +99,29 @@ function HistoryCard({
               {record.status === "pending" && <Clock className="w-3 h-3" />}
               {statusConfig.label}
             </span>
-            <button
-              onClick={() => onDelete(record.id)}
-              className="text-slate-600 hover:text-red-400 transition-colors p-1"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            {confirmingDelete ? (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => onDelete(record.id)}
+                  className="text-xs px-2 py-1 rounded-md bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-colors"
+                >
+                  削除する
+                </button>
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  className="text-xs px-2 py-1 rounded-md bg-slate-700/60 text-slate-300 hover:bg-slate-700 transition-colors"
+                >
+                  キャンセル
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                className="text-slate-600 hover:text-red-400 transition-colors p-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -103,6 +129,14 @@ function HistoryCard({
         {record.errorMessage && (
           <p className="text-red-400/70 text-xs mb-2 leading-relaxed bg-red-500/5 border border-red-500/10 rounded-lg px-3 py-2">
             {record.errorMessage.slice(0, 120)}
+          </p>
+        )}
+
+        {/* 再分析失敗のインラインエラー */}
+        {retryError && (
+          <p className="flex items-start gap-1.5 text-red-400 text-xs mb-2 leading-relaxed bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            再分析に失敗しました: {retryError}
           </p>
         )}
 
@@ -191,12 +225,12 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
   useEffect(() => { if (isOpen) fetchHistory(); }, [isOpen, fetchHistory]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("この履歴を削除しますか？")) return;
     await fetch("/api/history", { method: "DELETE", body: JSON.stringify({ id }), headers: { "Content-Type": "application/json" } });
     setRecords((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const handleRetry = async (id: string) => {
+  /** 呼び出し元（HistoryCard）でインライン表示するため、成功時はnull・失敗時はエラーメッセージを返す */
+  const handleRetry = async (id: string): Promise<string | null> => {
     const res = await fetch("/api/analyze/retry", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -206,8 +240,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
     if (!res.ok || data.error) {
       // Update local status to error
       setRecords((prev) => prev.map((r) => r.id === id ? { ...r, status: "error", errorMessage: data.error } : r));
-      alert(`再分析に失敗しました: ${data.error}`);
-      return;
+      return data.error ?? "不明なエラーが発生しました";
     }
     // Update local record to completed
     setRecords((prev) => prev.map((r) =>
@@ -215,6 +248,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
     ));
     onRetryComplete(data);
     onClose();
+    return null;
   };
 
   const pendingCount = records.filter((r) => r.status !== "completed").length;
