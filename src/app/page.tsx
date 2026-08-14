@@ -9,6 +9,7 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 import AnalysisResult from "@/components/AnalysisResult";
 import HistoryPanel from "@/components/HistoryPanel";
 import { ConsultantMode } from "@/lib/prompts";
+import { localHistory, AnalysisRecord } from "@/lib/localHistory";
 
 type AppState = "idle" | "loading" | "result" | "error";
 
@@ -18,16 +19,6 @@ interface AnalysisData {
   parsedData: Record<string, unknown> | null;
   hasHistory?: boolean;
   historyCount?: number;
-}
-
-interface HistoryRecord {
-  id: string;
-  createdAt: string;
-  mode: string;
-  companyName: string | null;
-  fileName: string | null;
-  rawText: string;
-  parsedData: string;
 }
 
 export default function Home() {
@@ -50,14 +41,52 @@ export default function Home() {
     setErrorMsg("");
 
     try {
+      // 「過去履歴との比較」用に、直近3件の完了済みレコードをlocalStorageから読み出して送る
+      const historyContext = localHistory.getRecentCompleted(mode, 3).map((r) => ({
+        createdAt: r.createdAt,
+        companyName: r.companyName,
+        parsedData: r.parsedData,
+        rawText: r.rawText,
+      }));
+
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("mode", mode);
+      if (historyContext.length > 0) formData.append("historyContext", JSON.stringify(historyContext));
 
       const res = await fetch("/api/analyze", { method: "POST", body: formData });
       const data = await res.json();
 
-      if (!res.ok || data.error) throw new Error(data.error || "分析に失敗しました");
+      if (!res.ok || data.error) {
+        // Gemini呼び出し失敗でも抽出済みファイルデータが返ってきていれば、再分析できるよう履歴に保存
+        if (data.fileData) {
+          localHistory.create({
+            status: "error",
+            mode,
+            companyName: null,
+            fileName: data.fileName ?? selectedFile.name,
+            fileMimeType: data.fileMimeType ?? null,
+            fileData: data.fileData,
+            rawText: "",
+            parsedData: "{}",
+            errorMessage: data.error || "分析に失敗しました",
+          });
+        }
+        throw new Error(data.error || "分析に失敗しました");
+      }
+
+      // 分析成功。履歴として保存(ファイルデータは容量節約のため保持しない)
+      localHistory.create({
+        status: "completed",
+        mode,
+        companyName: data.companyName ?? null,
+        fileName: data.fileName ?? selectedFile.name,
+        fileMimeType: null,
+        fileData: null,
+        rawText: data.rawText,
+        parsedData: JSON.stringify(data.parsedData ?? {}),
+        errorMessage: null,
+      });
 
       setAnalysisData({
         mode: data.mode,
@@ -81,7 +110,7 @@ export default function Home() {
     setErrorMsg("");
   };
 
-  const handleRestoreHistory = (record: HistoryRecord) => {
+  const handleRestoreHistory = (record: AnalysisRecord) => {
     let parsedData = null;
     try { parsedData = JSON.parse(record.parsedData); } catch { /* ignore */ }
     setAnalysisData({

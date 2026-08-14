@@ -4,18 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { X, History, Trash2, ChevronDown, ChevronUp, Building2, Calendar, FileText, RotateCcw, AlertCircle, Clock } from "lucide-react";
 import { CONSULTANT_MODES, ConsultantMode } from "@/lib/prompts";
 import { cn } from "@/lib/utils";
-
-interface AnalysisRecord {
-  id: string;
-  createdAt: string;
-  status: "pending" | "completed" | "error";
-  mode: string;
-  companyName: string | null;
-  fileName: string | null;
-  rawText: string;
-  parsedData: string;
-  errorMessage: string | null;
-}
+import { localHistory, AnalysisRecord } from "@/lib/localHistory";
 
 interface HistoryPanelProps {
   isOpen: boolean;
@@ -212,41 +201,58 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
   const [loading, setLoading] = useState(false);
   const [filterMode, setFilterMode] = useState<string>("all");
 
-  const fetchHistory = useCallback(async () => {
+  const fetchHistory = useCallback(() => {
     setLoading(true);
-    try {
-      const res = await fetch("/api/history");
-      const data = await res.json();
-      setRecords(data.analyses ?? []);
-    } catch { /* ignore */ }
+    setRecords(localHistory.getAll());
     setLoading(false);
   }, []);
 
   useEffect(() => { if (isOpen) fetchHistory(); }, [isOpen, fetchHistory]);
 
-  const handleDelete = async (id: string) => {
-    await fetch("/api/history", { method: "DELETE", body: JSON.stringify({ id }), headers: { "Content-Type": "application/json" } });
+  const handleDelete = (id: string) => {
+    localHistory.remove(id);
     setRecords((prev) => prev.filter((r) => r.id !== id));
   };
 
   /** 呼び出し元（HistoryCard）でインライン表示するため、成功時はnull・失敗時はエラーメッセージを返す */
   const handleRetry = async (id: string): Promise<string | null> => {
+    const record = localHistory.getById(id);
+    if (!record || !record.fileData) {
+      const msg = "ファイルデータが保存されていません。元のファイルを再アップロードしてください。";
+      localHistory.update(id, { status: "error", errorMessage: msg });
+      setRecords(localHistory.getAll());
+      return msg;
+    }
+
+    const historyContext = localHistory.getRecentCompleted(record.mode, 3).map((r) => ({
+      createdAt: r.createdAt,
+      companyName: r.companyName,
+      parsedData: r.parsedData,
+      rawText: r.rawText,
+    }));
+
     const res = await fetch("/api/analyze/retry", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ mode: record.mode, fileData: record.fileData, fileMimeType: record.fileMimeType, historyContext }),
     });
     const data = await res.json();
     if (!res.ok || data.error) {
-      // Update local status to error
-      setRecords((prev) => prev.map((r) => r.id === id ? { ...r, status: "error", errorMessage: data.error } : r));
+      localHistory.update(id, { status: "error", errorMessage: data.error ?? "不明なエラーが発生しました" });
+      setRecords(localHistory.getAll());
       return data.error ?? "不明なエラーが発生しました";
     }
-    // Update local record to completed
-    setRecords((prev) => prev.map((r) =>
-      r.id === id ? { ...r, status: "completed", rawText: data.rawText, parsedData: JSON.stringify(data.parsedData ?? {}), errorMessage: null } : r
-    ));
-    onRetryComplete(data);
+    // 再分析成功。localStorage上のレコードを完了状態に更新し、ファイルデータは容量節約のため破棄
+    localHistory.update(id, {
+      status: "completed",
+      companyName: data.companyName ?? record.companyName,
+      rawText: data.rawText,
+      parsedData: JSON.stringify(data.parsedData ?? {}),
+      errorMessage: null,
+      fileData: null,
+    });
+    setRecords(localHistory.getAll());
+    onRetryComplete({ id, mode: data.mode, rawText: data.rawText, parsedData: data.parsedData, hasHistory: data.hasHistory, historyCount: data.historyCount });
     onClose();
     return null;
   };
