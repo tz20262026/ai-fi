@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   title: "AI財務アドバイザー | Powered by Gemini 2.5 Flash",
   description: "AIが財務資料を分析し、銀行融資・投資・震災再建の観点でコンサルティングを提供します",
   robots: { index: false, follow: false },
+  manifest: "/manifest.json",
   openGraph: {
     title: "AI財務アドバイザー | Powered by Gemini 2.5 Flash",
     description: "AIが財務資料を分析し、銀行融資・投資・震災再建の観点でコンサルティングを提供します",

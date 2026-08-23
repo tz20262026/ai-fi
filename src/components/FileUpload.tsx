@@ -71,12 +71,22 @@ export default function FileUpload({ onFileSelect, disabled }: FileUploadProps) 
   return (
     <div className="space-y-3">
       <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-label="ファイルをアップロード"
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onClick={() => !disabled && fileInputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
         className={cn(
-          "relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer",
+          "relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60",
           isDragging
             ? "border-blue-400 bg-blue-500/10 scale-[1.01]"
             : "border-slate-600/50 bg-slate-800/30 hover:border-slate-500 hover:bg-slate-800/50",

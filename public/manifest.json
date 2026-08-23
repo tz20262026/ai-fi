@@ -1,0 +1,14 @@
+{
+  "name": "AI財務アドバイザー",
+  "short_name": "AI財務",
+  "description": "AIが財務資料を分析し、銀行融資・投資・震災再建の観点でコンサルティングを提供します",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "ja",
+  "icons": [
+    { "src": "/icon", "sizes": "32x32", "type": "image/png" },
+    { "src": "/apple-icon", "sizes": "180x180", "type": "image/png" }
+  ]
+}

@@ -128,15 +128,15 @@ export default function Home() {
 
         <div className="relative max-w-3xl mx-auto px-4 py-10 space-y-8">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <TrendingUp className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">AI財務アドバイザー</h1>
-                <p className="text-slate-400 text-sm flex items-center gap-1.5 mt-0.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight whitespace-nowrap">AI財務アドバイザー</h1>
+                <p className="text-slate-400 text-xs sm:text-sm flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
                   Powered by Gemini 2.5 Flash
                 </p>
               </div>
@@ -145,10 +145,11 @@ export default function Home() {
             {/* History button */}
             <button
               onClick={() => setHistoryOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600 text-slate-300 hover:text-white rounded-xl transition-all duration-200"
+              aria-label="分析履歴を開く"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 flex-shrink-0 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600 text-slate-300 hover:text-white rounded-xl transition-all duration-200"
             >
               <History className="w-4 h-4" />
-              <span className="text-sm font-medium">分析履歴</span>
+              <span className="hidden sm:inline text-sm font-medium">分析履歴</span>
             </button>
           </div>
 

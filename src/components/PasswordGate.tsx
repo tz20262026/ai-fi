@@ -72,22 +72,25 @@ export default function PasswordGate({ children }: PasswordGateProps) {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="site-password" className="block text-sm font-medium text-slate-300 mb-2">
                 <Lock className="inline w-4 h-4 mr-1 mb-0.5" />
                 アクセスパスワード
               </label>
               <div className="relative">
                 <input
+                  id="site-password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="パスワードを入力"
+                  autoComplete="current-password"
                   className="w-full bg-slate-800/80 border border-slate-600/50 text-white placeholder-slate-500 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -96,7 +99,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center gap-2">
+              <div role="alert" className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center gap-2">
                 <span className="text-red-400">⚠</span> {error}
               </div>
             )}
