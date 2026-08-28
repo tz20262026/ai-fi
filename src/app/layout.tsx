@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   description: "AIが財務資料を分析し、銀行融資・投資・震災再建の観点でコンサルティングを提供します",
   robots: { index: false, follow: false },
   manifest: "/manifest.json",
+  // 財務数値を電話番号・日付としてOSが勝手にリンク化するのを防ぐ
+  formatDetection: { telephone: false, date: false, address: false, email: false },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "AI財務" },
   openGraph: {
     title: "AI財務アドバイザー | Powered by Gemini 2.5 Flash",
     description: "AIが財務資料を分析し、銀行融資・投資・震災再建の観点でコンサルティングを提供します",

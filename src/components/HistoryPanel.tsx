@@ -209,6 +209,21 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
 
   useEffect(() => { if (isOpen) fetchHistory(); }, [isOpen, fetchHistory]);
 
+  // パネル表示中は Esc で閉じられるようにし、背面のスクロールをロックする
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen, onClose]);
+
   const handleDelete = (id: string) => {
     localHistory.remove(id);
     setRecords((prev) => prev.filter((r) => r.id !== id));
@@ -270,6 +285,10 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
         onClick={onClose}
       />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="過去の分析履歴"
+        aria-hidden={!isOpen}
         className={cn(
           "fixed top-0 right-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-700/50 z-50 flex flex-col shadow-2xl transition-transform duration-300",
           isOpen ? "translate-x-0" : "translate-x-full"

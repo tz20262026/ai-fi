@@ -135,8 +135,8 @@ export default function Home() {
               </div>
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight whitespace-nowrap">AI財務アドバイザー</h1>
-                <p className="text-slate-400 text-xs sm:text-sm flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                <p className="text-slate-400 text-xs sm:text-sm flex items-center gap-1.5 mt-0.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" aria-hidden="true" />
                   Powered by Gemini 2.5 Flash
                 </p>
               </div>
@@ -156,7 +156,7 @@ export default function Home() {
           {/* History comparison badge */}
           {appState === "result" && analysisData?.hasHistory && (
             <div className="flex items-center gap-2 px-4 py-2.5 bg-purple-500/10 border border-purple-500/30 rounded-xl">
-              <span className="text-purple-400 text-sm">🧠</span>
+              <span className="text-purple-400 text-sm" aria-hidden="true">🧠</span>
               <p className="text-purple-300 text-sm">
                 過去{analysisData.historyCount}件のデータと比較した<strong>トレンド分析</strong>が含まれています
               </p>
@@ -193,7 +193,7 @@ export default function Home() {
                 </div>
 
                 {appState === "error" && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                  <div role="alert" className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
                     <strong>エラー:</strong> {errorMsg}
                   </div>
                 )}

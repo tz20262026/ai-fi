@@ -1,12 +1,15 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 import { SYSTEM_PROMPTS, ConsultantMode } from "@/lib/prompts";
-import { buildHistoryContext, HistoryContextEntry } from "@/lib/historyContext";
+import { HistoryContextEntry } from "@/lib/historyContext";
+import { BINARY_MIME_TYPES, runGeminiAnalysis } from "@/lib/geminiAnalyze";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const BINARY_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+// Gemini分析はファイルサイズ次第で時間がかかるため、実行時間の上限を延ばす
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB（クライアント側と揃える）
 
 async function extractText(file: File, bytes: ArrayBuffer): Promise<string | null> {
   const name = file.name.toLowerCase();
@@ -27,14 +30,6 @@ async function extractText(file: File, bytes: ArrayBuffer): Promise<string | nul
   return null;
 }
 
-function extractCompanyName(text: string, parsedData: Record<string, unknown> | null): string | null {
-  if (parsedData && typeof parsedData.company_name === "string" && parsedData.company_name) {
-    return parsedData.company_name;
-  }
-  const match = text.match(/(?:会社名|企業名|社名)[：:]\s*([^\n・、。]{1,30})/);
-  return match ? match[1].trim() : null;
-}
-
 /**
  * 履歴の永続化はクライアント側(localStorage)が担う。
  * このAPIはファイル抽出→Gemini分析を行い、結果をレスポンスで返すだけのステートレスな処理。
@@ -50,6 +45,9 @@ export async function POST(req: NextRequest) {
 
     if (!file) return NextResponse.json({ error: "ファイルが見つかりません" }, { status: 400 });
     if (!mode || !SYSTEM_PROMPTS[mode]) return NextResponse.json({ error: "無効なモードです" }, { status: 400 });
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: "ファイルサイズは20MB以下にしてください" }, { status: 413 });
+    }
 
     let histories: HistoryContextEntry[] = [];
     if (historyContextRaw) {
@@ -77,50 +75,12 @@ export async function POST(req: NextRequest) {
     const fileMimeType = isBinary ? file.type : "text/plain";
 
     try {
-      const historyContext = buildHistoryContext(histories);
-      const hasHistory = histories.length > 0;
-
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-      const systemPrompt = SYSTEM_PROMPTS[mode];
-      const historySection = historyContext ? `\n\n${historyContext}` : "";
-      const userPrompt = hasHistory
-        ? "以下の財務資料を分析してください。過去のデータとの比較・トレンド分析を含め、必ずJSONフォーマットと詳細レポートを作成してください。"
-        : "以下の財務資料を分析してください。必ずJSONフォーマットを含む詳細なレポートを作成してください。";
-
-      let result;
-      if (isBinary) {
-        result = await model.generateContent([
-          { text: systemPrompt + historySection + "\n\n" + userPrompt },
-          { inlineData: { mimeType: fileMimeType, data: fileData } },
-        ]);
-      } else {
-        result = await model.generateContent([
-          { text: systemPrompt + historySection + "\n\n" + userPrompt + "\n\n【財務資料の内容】\n" + fileData },
-        ]);
-      }
-
-      const text = result.response.text();
-      const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
-      let parsedData: Record<string, unknown> | null = null;
-      if (jsonMatch) {
-        try {
-          parsedData = JSON.parse(jsonMatch[1]);
-        } catch {
-          /* JSONとして解釈できなくても本文レポートは使えるので続行 */
-        }
-      }
-
-      const companyName = extractCompanyName(text, parsedData);
-
+      const analysis = await runGeminiAnalysis({ mode, fileData, fileMimeType, histories });
       return NextResponse.json({
         success: true,
         mode,
-        rawText: text,
-        parsedData,
-        companyName,
         fileName: file.name,
-        hasHistory,
-        historyCount: histories.length,
+        ...analysis,
       });
     } catch (geminiError: unknown) {
       // Gemini呼び出し失敗時は、クライアント側で「再分析」できるよう抽出済みのファイルデータを返す

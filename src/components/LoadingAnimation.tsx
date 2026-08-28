@@ -39,9 +39,14 @@ export default function LoadingAnimation({ mode }: LoadingAnimationProps) {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-8 space-y-8">
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={`${config.label}モードでAIが分析中です`}
+      className="flex flex-col items-center justify-center py-16 px-8 space-y-8"
+    >
       {/* Main animation */}
-      <div className="relative w-32 h-32">
+      <div className="relative w-32 h-32" aria-hidden="true">
         {/* Outer ring */}
         <div className="absolute inset-0 rounded-full border-4 border-slate-700/30" />
         <div
@@ -116,7 +121,7 @@ export default function LoadingAnimation({ mode }: LoadingAnimationProps) {
       </div>
 
       {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
