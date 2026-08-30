@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { TrendingUp, Sparkles, History } from "lucide-react";
+import { TrendingUp, Sparkles, History, Lock } from "lucide-react";
 import PasswordGate from "@/components/PasswordGate";
 import ModeSelector from "@/components/ModeSelector";
 import FileUpload from "@/components/FileUpload";
@@ -33,6 +33,18 @@ export default function Home() {
     setSelectedFile(file);
     setAppState("idle");
     setAnalysisData(null);
+  }, []);
+
+  const handleFileClear = useCallback(() => {
+    setSelectedFile(null);
+    setAppState("idle");
+    setAnalysisData(null);
+    setErrorMsg("");
+  }, []);
+
+  const handleLock = useCallback(() => {
+    sessionStorage.removeItem("ai_fi_auth");
+    window.location.reload();
   }, []);
 
   const handleAnalyze = async () => {
@@ -142,15 +154,25 @@ export default function Home() {
               </div>
             </div>
 
-            {/* History button */}
-            <button
-              onClick={() => setHistoryOpen(true)}
-              aria-label="分析履歴を開く"
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 flex-shrink-0 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600 text-slate-300 hover:text-white rounded-xl transition-all duration-200"
-            >
-              <History className="w-4 h-4" />
-              <span className="hidden sm:inline text-sm font-medium">分析履歴</span>
-            </button>
+            {/* Header actions */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => setHistoryOpen(true)}
+                aria-label="分析履歴を開く"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600 text-slate-300 hover:text-white rounded-xl transition-all duration-200"
+              >
+                <History className="w-4 h-4" />
+                <span className="hidden sm:inline text-sm font-medium">分析履歴</span>
+              </button>
+              <button
+                onClick={handleLock}
+                aria-label="ロックする（ログアウト）"
+                title="ロックする"
+                className="flex items-center justify-center p-2 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-slate-600 text-slate-300 hover:text-white rounded-xl transition-all duration-200"
+              >
+                <Lock className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* History comparison badge */}
@@ -189,7 +211,7 @@ export default function Home() {
                   <h2 className="text-slate-300 font-semibold text-sm mb-3 uppercase tracking-wider">
                     財務資料をアップロード
                   </h2>
-                  <FileUpload onFileSelect={handleFileSelect} disabled={false} />
+                  <FileUpload onFileSelect={handleFileSelect} onClear={handleFileClear} disabled={false} />
                 </div>
 
                 {appState === "error" && (
@@ -209,7 +231,7 @@ export default function Home() {
             )}
           </div>
 
-          <p className="text-center text-slate-600 text-xs">
+          <p className="text-center text-slate-400 text-xs">
             このシステムはAIによる参考情報の提供を目的としています。実際の意思決定は専門家にご相談ください。
           </p>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { X, History, Trash2, ChevronDown, ChevronUp, Building2, Calendar, FileText, RotateCcw, AlertCircle, Clock } from "lucide-react";
 import { CONSULTANT_MODES, ConsultantMode } from "@/lib/prompts";
 import { cn } from "@/lib/utils";
@@ -79,7 +79,7 @@ function HistoryCard({
               <p className="text-white text-sm font-semibold truncate">
                 {record.companyName ?? "社名不明"}
               </p>
-              <p className="text-slate-500 text-xs">{modeConfig?.label ?? record.mode}</p>
+              <p className="text-slate-400 text-xs">{modeConfig?.label ?? record.mode}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -106,7 +106,8 @@ function HistoryCard({
             ) : (
               <button
                 onClick={() => setConfirmingDelete(true)}
-                className="text-slate-600 hover:text-red-400 transition-colors p-1"
+                aria-label="この履歴を削除"
+                className="text-slate-500 hover:text-red-400 transition-colors p-1"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -130,7 +131,7 @@ function HistoryCard({
         )}
 
         {/* Meta */}
-        <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
+        <div className="flex items-center gap-3 text-xs text-slate-400 mb-3">
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             {formatDate(record.createdAt)}
@@ -177,7 +178,8 @@ function HistoryCard({
           {isCompleted && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="px-2 text-slate-500 hover:text-slate-300 transition-colors"
+              aria-label={expanded ? "詳細を閉じる" : "詳細を開く"}
+              className="px-2 text-slate-400 hover:text-slate-200 transition-colors"
             >
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -200,6 +202,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
   const [records, setRecords] = useState<AnalysisRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterMode, setFilterMode] = useState<string>("all");
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   const fetchHistory = useCallback(() => {
     setLoading(true);
@@ -218,6 +221,8 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
     window.addEventListener("keydown", onKeyDown);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // 開いたらパネル内へフォーカスを移し、キーボード操作の起点を明確にする
+    closeBtnRef.current?.focus();
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
@@ -289,6 +294,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
         aria-modal="true"
         aria-label="過去の分析履歴"
         aria-hidden={!isOpen}
+        inert={!isOpen}
         className={cn(
           "fixed top-0 right-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-700/50 z-50 flex flex-col shadow-2xl transition-transform duration-300",
           isOpen ? "translate-x-0" : "translate-x-full"
@@ -308,7 +314,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
               </span>
             )}
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+          <button ref={closeBtnRef} onClick={onClose} aria-label="履歴パネルを閉じる" className="text-slate-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -324,7 +330,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
                 onClick={() => setFilterMode(m)}
                 className={cn(
                   "px-2.5 py-1 text-xs rounded-lg transition-all",
-                  filterMode === m ? "bg-blue-600/30 text-blue-300 border border-blue-500/30" : "text-slate-500 hover:text-slate-300"
+                  filterMode === m ? "bg-blue-600/30 text-blue-300 border border-blue-500/30" : "text-slate-400 hover:text-slate-200"
                 )}
               >
                 {label} {count > 0 && <span className="opacity-60">({count})</span>}
@@ -342,8 +348,8 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Building2 className="w-10 h-10 text-slate-700 mb-3" />
-              <p className="text-slate-500 text-sm">まだ分析履歴がありません</p>
-              <p className="text-slate-600 text-xs mt-1">分析を実行すると自動保存されます</p>
+              <p className="text-slate-400 text-sm">まだ分析履歴がありません</p>
+              <p className="text-slate-400 text-xs mt-1">分析を実行すると自動保存されます</p>
             </div>
           ) : (
             filtered.map((record) => (

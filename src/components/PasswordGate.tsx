@@ -16,6 +16,19 @@ export default function PasswordGate({ children }: PasswordGateProps) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  // 総当たり対策：連続失敗が続いたら一定時間だけ入力を止める
+  const [failCount, setFailCount] = useState(0);
+  const [lockUntil, setLockUntil] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (lockUntil <= now) return;
+    const t = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(t);
+  }, [lockUntil, now]);
+
+  const isLocked = lockUntil > now;
+  const lockRemainingSec = isLocked ? Math.ceil((lockUntil - now) / 1000) : 0;
 
   useEffect(() => {
     const stored = sessionStorage.getItem(SESSION_KEY);
@@ -27,6 +40,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) return;
     setIsLoading(true);
     setError("");
 
@@ -37,8 +51,17 @@ export default function PasswordGate({ children }: PasswordGateProps) {
       sessionStorage.setItem(SESSION_KEY, "true");
       setIsAuthenticated(true);
     } else {
-      setError("パスワードが正しくありません");
+      const next = failCount + 1;
+      setFailCount(next);
       setPassword("");
+      // 5回連続で失敗したら30秒ロック（以降は失敗ごとに再ロック）
+      if (next >= 5) {
+        setLockUntil(Date.now() + 30_000);
+        setNow(Date.now());
+        setError("試行回数が上限に達しました。30秒後に再度お試しください");
+      } else {
+        setError(`パスワードが正しくありません（残り${5 - next}回）`);
+      }
     }
     setIsLoading(false);
   };
@@ -71,6 +94,17 @@ export default function PasswordGate({ children }: PasswordGateProps) {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* パスワードマネージャ／スクリーンリーダー向けの隠しユーザー名フィールド */}
+            <input
+              type="text"
+              name="username"
+              autoComplete="username"
+              value="finance-ai"
+              readOnly
+              tabIndex={-1}
+              aria-hidden="true"
+              className="hidden"
+            />
             <div>
               <label htmlFor="site-password" className="block text-sm font-medium text-slate-300 mb-2">
                 <Lock className="inline w-4 h-4 mr-1 mb-0.5" />
@@ -84,7 +118,8 @@ export default function PasswordGate({ children }: PasswordGateProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="パスワードを入力"
                   autoComplete="current-password"
-                  className="w-full bg-slate-800/80 border border-slate-600/50 text-white placeholder-slate-500 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                  disabled={isLocked}
+                  className="w-full bg-slate-800/80 border border-slate-600/50 text-white placeholder-slate-500 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   autoFocus
                 />
                 <button
@@ -100,13 +135,14 @@ export default function PasswordGate({ children }: PasswordGateProps) {
 
             {error && (
               <div role="alert" className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm flex items-center gap-2">
-                <span className="text-red-400">⚠</span> {error}
+                <span className="text-red-400">⚠</span>
+                {isLocked ? `試行回数が上限に達しました。あと${lockRemainingSec}秒お待ちください` : error}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={isLoading || !password}
+              disabled={isLoading || !password || isLocked}
               className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
             >
               {isLoading ? (
@@ -120,7 +156,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
             </button>
           </form>
 
-          <p className="text-center text-slate-600 text-xs mt-6">
+          <p className="text-center text-slate-400 text-xs mt-6">
             Confidential · Finance AI System
           </p>
         </div>

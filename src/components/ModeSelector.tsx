@@ -10,14 +10,16 @@ interface ModeSelectorProps {
 
 export default function ModeSelector({ selected, onChange }: ModeSelectorProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div role="group" aria-label="コンサルタントモード" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {(Object.keys(CONSULTANT_MODES) as ConsultantMode[]).map((mode) => {
         const config = CONSULTANT_MODES[mode];
         const isSelected = selected === mode;
         return (
           <button
             key={mode}
+            type="button"
             onClick={() => onChange(mode)}
+            aria-pressed={isSelected}
             className={cn(
               "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 text-center group",
               isSelected
@@ -36,7 +38,7 @@ export default function ModeSelector({ selected, onChange }: ModeSelectorProps) 
               )}>
                 {config.label}
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">{config.description}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{config.description}</p>
             </div>
             {isSelected && (
               <span className="absolute top-2 right-2 w-2 h-2 bg-blue-400 rounded-full animate-pulse" />

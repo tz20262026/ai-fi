@@ -6,10 +6,12 @@ import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
+  /** 選択済みファイルを解除したとき（「変更する」ボタン）に親へ通知する */
+  onClear?: () => void;
   disabled?: boolean;
 }
 
-export default function FileUpload({ onFileSelect, disabled }: FileUploadProps) {
+export default function FileUpload({ onFileSelect, onClear, disabled }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -104,6 +106,9 @@ export default function FileUpload({ onFileSelect, disabled }: FileUploadProps) 
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedFile(null);
+                setValidationError(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                onClear?.();
               }}
               className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition-colors"
             >
@@ -125,10 +130,10 @@ export default function FileUpload({ onFileSelect, disabled }: FileUploadProps) 
               <p className="text-slate-300 font-medium">
                 ファイルをドラッグ＆ドロップ
               </p>
-              <p className="text-slate-500 text-sm mt-1">
+              <p className="text-slate-400 text-sm mt-1">
                 または<span className="text-blue-400 hover:underline">クリックして選択</span>
               </p>
-              <p className="text-slate-600 text-xs mt-2">PDF · Image · Word · Excel · Text（最大20MB）</p>
+              <p className="text-slate-400 text-xs mt-2">PDF · Image · Word · Excel · Text（最大20MB）</p>
             </div>
           </div>
         )}

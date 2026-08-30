@@ -101,7 +101,7 @@ export default function LoadingAnimation({ mode }: LoadingAnimationProps) {
               )}
             </div>
             <span className={`text-sm transition-colors duration-300 ${
-              i <= step ? "text-slate-200" : "text-slate-600"
+              i <= step ? "text-slate-200" : "text-slate-500"
             }`}>
               {s}
             </span>
@@ -117,7 +117,7 @@ export default function LoadingAnimation({ mode }: LoadingAnimationProps) {
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className="text-xs text-slate-500 text-right">{Math.round(progress)}%</p>
+        <p className="text-xs text-slate-400 text-right">{Math.round(progress)}%</p>
       </div>
 
       {/* Floating particles */}

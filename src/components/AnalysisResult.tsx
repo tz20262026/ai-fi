@@ -77,7 +77,23 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
   const recs: Recommendation[] = parsedData?.recommendations || [];
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(rawText);
+    try {
+      await navigator.clipboard.writeText(rawText);
+    } catch {
+      // クリップボードAPIが使えない環境（非HTTPS等）向けのフォールバック
+      const ta = document.createElement("textarea");
+      ta.value = rawText;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+      } catch {
+        /* コピー不可。ユーザーは全文表示から手動でコピーできる */
+      }
+      document.body.removeChild(ta);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -172,7 +188,7 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Object.entries(parsedData.financial_summary).map(([key, val]) => (
               <div key={key} className="bg-slate-900/50 rounded-lg p-3">
-                <p className="text-slate-500 text-xs mb-1">{formatKey(key)}</p>
+                <p className="text-slate-400 text-xs mb-1">{formatKey(key)}</p>
                 <p className="text-white font-bold text-sm leading-tight">{String(val)}</p>
               </div>
             ))}
