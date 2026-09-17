@@ -161,7 +161,7 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
       <button
         onClick={() => !disabled && cameraInputRef.current?.click()}
         disabled={disabled}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-slate-600 text-slate-300 hover:text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 py-3 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-slate-600 text-slate-300 hover:text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed sm:hidden"
       >
         <Camera className="w-5 h-5" />
         <span className="text-sm font-medium">スマホカメラで撮影</span>
