@@ -79,7 +79,7 @@ function HistoryCard({
               <p className="text-white text-sm font-semibold truncate">
                 {record.companyName ?? "社名不明"}
               </p>
-              <p className="text-slate-400 text-xs">{modeConfig?.label ?? record.mode}</p>
+              <p className="text-slate-300 text-xs">{modeConfig?.label ?? record.mode}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -117,14 +117,14 @@ function HistoryCard({
 
         {/* Error message */}
         {record.errorMessage && (
-          <p className="text-red-400/70 text-xs mb-2 leading-relaxed bg-red-500/5 border border-red-500/10 rounded-lg px-3 py-2">
+          <p className="text-red-300/70 text-xs mb-2 leading-relaxed bg-red-500/5 border border-red-500/10 rounded-lg px-3 py-2">
             {record.errorMessage.slice(0, 120)}
           </p>
         )}
 
         {/* 再分析失敗のインラインエラー */}
         {retryError && (
-          <p className="flex items-start gap-1.5 text-red-400 text-xs mb-2 leading-relaxed bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+          <p className="flex items-start gap-1.5 text-red-300 text-xs mb-2 leading-relaxed bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
             再分析に失敗しました: {retryError}
           </p>
@@ -189,7 +189,7 @@ function HistoryCard({
 
       {expanded && isCompleted && (
         <div className="border-t border-slate-700/40 p-4">
-          <pre className="text-xs text-slate-400 whitespace-pre-wrap leading-relaxed max-h-48 overflow-auto">
+          <pre className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed max-h-48 overflow-auto">
             {record.rawText}
           </pre>
         </div>
@@ -257,6 +257,11 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
       body: JSON.stringify({ mode: record.mode, fileData: record.fileData, fileMimeType: record.fileMimeType, historyContext }),
     });
     const data = await res.json();
+    if (res.status === 429) {
+      // コスト防御のレート制限による一時的な拒否。連打対策なのでレコードは「未分析」のままにし、
+      // インラインメッセージだけ表示して少し待てば再試行できることを伝える
+      return data.error || "短時間に分析リクエストが多すぎます。しばらく待ってから再度お試しください。";
+    }
     if (!res.ok || data.error) {
       localHistory.update(id, { status: "error", errorMessage: data.error ?? "不明なエラーが発生しました" });
       setRecords(localHistory.getAll());
@@ -330,7 +335,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
                 onClick={() => setFilterMode(m)}
                 className={cn(
                   "px-2.5 py-1 text-xs rounded-lg transition-all",
-                  filterMode === m ? "bg-blue-600/30 text-blue-300 border border-blue-500/30" : "text-slate-400 hover:text-slate-200"
+                  filterMode === m ? "bg-blue-600/30 text-blue-300 border border-blue-500/30" : "text-slate-300 hover:text-slate-200"
                 )}
               >
                 {label} {count > 0 && <span className="opacity-60">({count})</span>}
@@ -348,8 +353,8 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Building2 className="w-10 h-10 text-slate-700 mb-3" />
-              <p className="text-slate-400 text-sm">まだ分析履歴がありません</p>
-              <p className="text-slate-400 text-xs mt-1">分析を実行すると自動保存されます</p>
+              <p className="text-slate-300 text-sm">まだ分析履歴がありません</p>
+              <p className="text-slate-300 text-xs mt-1">分析を実行すると自動保存されます</p>
             </div>
           ) : (
             filtered.map((record) => (

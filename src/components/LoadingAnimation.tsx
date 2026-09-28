@@ -13,9 +13,11 @@ const STEPS = [
 
 interface LoadingAnimationProps {
   mode: ConsultantMode;
+  /** キャンセルボタン押下時のハンドラ。渡された場合のみボタンを表示する */
+  onCancel?: () => void;
 }
 
-export default function LoadingAnimation({ mode }: LoadingAnimationProps) {
+export default function LoadingAnimation({ mode, onCancel }: LoadingAnimationProps) {
   const [step, setStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const config = CONSULTANT_MODES[mode];
@@ -101,7 +103,7 @@ export default function LoadingAnimation({ mode }: LoadingAnimationProps) {
               )}
             </div>
             <span className={`text-sm transition-colors duration-300 ${
-              i <= step ? "text-slate-200" : "text-slate-500"
+              i <= step ? "text-slate-200" : "text-slate-300"
             }`}>
               {s}
             </span>
@@ -117,8 +119,20 @@ export default function LoadingAnimation({ mode }: LoadingAnimationProps) {
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className="text-xs text-slate-400 text-right">{Math.round(progress)}%</p>
+        <p className="text-xs text-slate-300 text-right">{Math.round(progress)}%</p>
       </div>
+
+      {/* Cancel button（誤操作防止のため控えめなテキストリンク風にする） */}
+      {onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          aria-label="AI分析をキャンセルして選択画面に戻る"
+          className="text-sm text-slate-300 hover:text-slate-100 underline underline-offset-2 decoration-slate-500 hover:decoration-slate-300 transition-colors duration-200"
+        >
+          分析をキャンセル
+        </button>
+      )}
 
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">

@@ -38,7 +38,7 @@ export default function ModeSelector({ selected, onChange }: ModeSelectorProps) 
               )}>
                 {config.label}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">{config.description}</p>
+              <p className="text-xs text-slate-300 mt-0.5">{config.description}</p>
             </div>
             {isSelected && (
               <span className="absolute top-2 right-2 w-2 h-2 bg-blue-400 rounded-full animate-pulse" />

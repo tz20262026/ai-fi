@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SYSTEM_PROMPTS, ConsultantMode } from "@/lib/prompts";
 import { HistoryContextEntry } from "@/lib/historyContext";
-import { BINARY_MIME_TYPES, runGeminiAnalysis } from "@/lib/geminiAnalyze";
+import { BINARY_MIME_TYPES, runGeminiAnalysis, toFriendlyErrorMessage } from "@/lib/geminiAnalyze";
+import { checkAnalyzeRateLimit, getClientIp, isAuthenticated } from "@/lib/auth";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 
@@ -37,6 +38,20 @@ async function extractText(file: File, bytes: ArrayBuffer): Promise<string | nul
  * リクエストの historyContext フィールド(JSON文字列)として送ってくる。
  */
 export async function POST(req: NextRequest) {
+  if (!isAuthenticated(req)) {
+    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
+  }
+
+  // Gemini APIは呼ばれるたびに費用が発生するため、Cookie漏洩や連打による
+  // 想定外コストを防ぐ簡易レート制限（IPベース）
+  const { limited, retryAfterSec } = checkAnalyzeRateLimit(getClientIp(req));
+  if (limited) {
+    return NextResponse.json(
+      { error: "短時間に分析リクエストが多すぎます。しばらく待ってから再度お試しください。", retryAfterSec },
+      { status: 429 }
+    );
+  }
+
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
@@ -84,7 +99,7 @@ export async function POST(req: NextRequest) {
       });
     } catch (geminiError: unknown) {
       // Gemini呼び出し失敗時は、クライアント側で「再分析」できるよう抽出済みのファイルデータを返す
-      const message = geminiError instanceof Error ? geminiError.message : "分析中にエラーが発生しました";
+      const message = toFriendlyErrorMessage(geminiError);
       return NextResponse.json(
         { error: message, mode, fileName: file.name, fileMimeType, fileData },
         { status: 500 }

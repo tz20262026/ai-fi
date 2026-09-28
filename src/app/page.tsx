@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { TrendingUp, Sparkles, History, Lock } from "lucide-react";
 import PasswordGate from "@/components/PasswordGate";
 import ModeSelector from "@/components/ModeSelector";
@@ -28,6 +28,8 @@ export default function Home() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
+  // 分析中のfetchをキャンセルできるようにコンポーネントスコープで保持する
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleFileSelect = useCallback((file: File) => {
     setSelectedFile(file);
@@ -44,13 +46,17 @@ export default function Home() {
 
   const handleLock = useCallback(() => {
     sessionStorage.removeItem("ai_fi_auth");
-    window.location.reload();
+    fetch("/api/auth", { method: "DELETE" }).finally(() => window.location.reload());
   }, []);
 
   const handleAnalyze = async () => {
     if (!selectedFile) return;
     setAppState("loading");
     setErrorMsg("");
+
+    // 前回分のAbortControllerが残っていないか念のためクリアしてから新規作成
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       // 「過去履歴との比較」用に、直近3件の完了済みレコードをlocalStorageから読み出して送る
@@ -66,8 +72,13 @@ export default function Home() {
       formData.append("mode", mode);
       if (historyContext.length > 0) formData.append("historyContext", JSON.stringify(historyContext));
 
-      const res = await fetch("/api/analyze", { method: "POST", body: formData });
+      const res = await fetch("/api/analyze", { method: "POST", body: formData, signal: controller.signal });
       const data = await res.json();
+
+      if (res.status === 429) {
+        // コスト防御のレート制限。連打・Cookie漏洩対策で意図的に弾いているだけなので履歴には残さない
+        throw new Error(data.error || "短時間に分析リクエストが多すぎます。しばらく待ってから再度お試しください。");
+      }
 
       if (!res.ok || data.error) {
         // Gemini呼び出し失敗でも抽出済みファイルデータが返ってきていれば、再分析できるよう履歴に保存
@@ -109,11 +120,24 @@ export default function Home() {
       });
       setAppState("result");
     } catch (err: unknown) {
+      // ユーザーがキャンセルボタンを押した場合はエラー扱いにせず、
+      // ファイル選択・モードを維持したまま選択画面にそのまま戻す
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setAppState("idle");
+        return;
+      }
       const message = err instanceof Error ? err.message : "予期しないエラーが発生しました";
       setErrorMsg(message);
       setAppState("error");
+    } finally {
+      abortControllerRef.current = null;
     }
   };
+
+  // 分析中のキャンセルボタン用ハンドラ。進行中のfetchをabortしてidle状態に戻す
+  const handleCancelAnalyze = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
 
   const handleReset = () => {
     setSelectedFile(null);
@@ -188,7 +212,7 @@ export default function Home() {
           {/* Main card */}
           <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 shadow-xl">
             {appState === "loading" ? (
-              <LoadingAnimation mode={mode} />
+              <LoadingAnimation mode={mode} onCancel={handleCancelAnalyze} />
             ) : appState === "result" && analysisData ? (
               <AnalysisResult
                 mode={analysisData.mode}

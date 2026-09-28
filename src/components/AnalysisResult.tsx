@@ -131,7 +131,7 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
       <div className="flex items-center justify-between">
         <button
           onClick={onReset}
-          className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors group"
+          className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           戻る
@@ -168,7 +168,7 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
           <span className="text-2xl">{config.icon}</span>
           <div>
             <h2 className="text-white font-bold text-lg">分析レポート完成</h2>
-            <p className="text-slate-400 text-sm">{config.label}モード</p>
+            <p className="text-slate-300 text-sm">{config.label}モード</p>
           </div>
         </div>
         {metaBadge && (
@@ -188,7 +188,7 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Object.entries(parsedData.financial_summary).map(([key, val]) => (
               <div key={key} className="bg-slate-900/50 rounded-lg p-3">
-                <p className="text-slate-400 text-xs mb-1">{formatKey(key)}</p>
+                <p className="text-slate-300 text-xs mb-1">{formatKey(key)}</p>
                 <p className="text-white font-bold text-sm leading-tight">{String(val)}</p>
               </div>
             ))}
@@ -222,7 +222,7 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
                         優先度: {rec.priority}
                       </span>
                     </div>
-                    <p className="text-slate-400 text-sm leading-relaxed">{rec.detail}</p>
+                    <p className="text-slate-300 text-sm leading-relaxed">{rec.detail}</p>
                   </div>
                 </div>
               </div>
@@ -281,13 +281,13 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
       <div className="border-t border-slate-700/50 pt-4">
         <button
           onClick={() => setShowRaw(!showRaw)}
-          className="flex items-center gap-2 text-slate-400 hover:text-slate-200 text-sm transition-colors"
+          className="flex items-center gap-2 text-slate-300 hover:text-slate-200 text-sm transition-colors"
         >
           {showRaw ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           詳細レポート全文を{showRaw ? "閉じる" : "表示"}
         </button>
         {showRaw && (
-          <pre className="mt-3 bg-slate-900/70 border border-slate-700/30 rounded-xl p-4 text-xs text-slate-400 overflow-auto max-h-96 whitespace-pre-wrap leading-relaxed">
+          <pre className="mt-3 bg-slate-900/70 border border-slate-700/30 rounded-xl p-4 text-xs text-slate-300 overflow-auto max-h-96 whitespace-pre-wrap leading-relaxed">
             {rawText}
           </pre>
         )}

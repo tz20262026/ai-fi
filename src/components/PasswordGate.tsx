@@ -44,24 +44,41 @@ export default function PasswordGate({ children }: PasswordGateProps) {
     setIsLoading(true);
     setError("");
 
-    await new Promise((r) => setTimeout(r, 600));
+    try {
+      // パスワードの正誤判定は必ずサーバー側で行う。
+      // 以前はNEXT_PUBLIC_環境変数をクライアントJSに埋め込んで比較していたため、
+      // デプロイ後のJSバンドルを読めば誰でも正解のパスワードを抜き取れてしまっていた。
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
 
-    const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD || "1234";
-    if (password === correctPassword) {
-      sessionStorage.setItem(SESSION_KEY, "true");
-      setIsAuthenticated(true);
-    } else {
-      const next = failCount + 1;
-      setFailCount(next);
-      setPassword("");
-      // 5回連続で失敗したら30秒ロック（以降は失敗ごとに再ロック）
-      if (next >= 5) {
-        setLockUntil(Date.now() + 30_000);
+      if (res.status === 429) {
+        const data = await res.json().catch(() => ({}));
+        const retryAfterSec = typeof data.retryAfterSec === "number" ? data.retryAfterSec : 30;
+        setPassword("");
+        setLockUntil(Date.now() + retryAfterSec * 1000);
         setNow(Date.now());
-        setError("試行回数が上限に達しました。30秒後に再度お試しください");
+        setError(`試行回数が上限に達しました。${retryAfterSec}秒後に再度お試しください`);
+      } else if (res.ok) {
+        sessionStorage.setItem(SESSION_KEY, "true");
+        setIsAuthenticated(true);
       } else {
-        setError(`パスワードが正しくありません（残り${5 - next}回）`);
+        const next = failCount + 1;
+        setFailCount(next);
+        setPassword("");
+        // 5回連続で失敗したら30秒ロック（以降は失敗ごとに再ロック、実際の制限はサーバー側）
+        if (next >= 5) {
+          setLockUntil(Date.now() + 30_000);
+          setNow(Date.now());
+          setError("試行回数が上限に達しました。30秒後に再度お試しください");
+        } else {
+          setError(`パスワードが正しくありません（残り${5 - next}回）`);
+        }
       }
+    } catch {
+      setError("通信エラーが発生しました。もう一度お試しください");
     }
     setIsLoading(false);
   };

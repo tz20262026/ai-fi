@@ -35,7 +35,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             <h1 className="text-2xl font-bold text-white tracking-tight text-center">
               エラーが発生しました
             </h1>
-            <p className="text-slate-400 text-sm mt-2 text-center">
+            <p className="text-slate-300 text-sm mt-2 text-center">
               システムで予期しない問題が発生しました。
               <br />
               しばらく経ってから再度お試しください。
@@ -45,11 +45,11 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           {/* 開発環境のみ詳細を表示（本番では詳細を隠す） */}
           {process.env.NODE_ENV === "development" && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-6">
-              <p className="text-red-400 text-xs font-mono break-all">
+              <p className="text-red-300 text-xs font-mono break-all">
                 {error.message}
               </p>
               {error.digest && (
-                <p className="text-red-400/70 text-xs font-mono mt-1">
+                <p className="text-red-300/70 text-xs font-mono mt-1">
                   digest: {error.digest}
                 </p>
               )}
@@ -65,7 +65,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             再試行
           </button>
 
-          <p className="text-center text-slate-400 text-xs mt-6">
+          <p className="text-center text-slate-300 text-xs mt-6">
             Confidential · Finance AI System
           </p>
         </div>

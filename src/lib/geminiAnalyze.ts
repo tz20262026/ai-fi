@@ -91,3 +91,49 @@ export async function runGeminiAnalysis({
     historyCount: histories.length,
   };
 }
+
+/**
+ * Gemini SDKが投げる生のエラー（英語・HTTPステータス文言など）を、
+ * 日本語UIにそのまま出しても不自然にならないよう、分かりやすいメッセージへ変換する。
+ * キーワードの緩い部分一致で判定するため、SDKのメッセージ変化にもある程度追従できる。
+ */
+export function toFriendlyErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  const lower = raw.toLowerCase();
+
+  if (
+    lower.includes("429") ||
+    lower.includes("quota") ||
+    lower.includes("rate limit") ||
+    lower.includes("resource_exhausted") ||
+    lower.includes("resource exhausted")
+  ) {
+    return "AIサービスの利用上限に達しています。しばらく時間をおいてから再度お試しください。";
+  }
+  if (lower.includes("safety") || lower.includes("blocked")) {
+    return "ファイルの内容が安全基準に抵触したため分析を完了できませんでした。別のファイルでお試しください。";
+  }
+  if (lower.includes("timeout") || lower.includes("deadline")) {
+    return "分析がタイムアウトしました。ファイルサイズを小さくするか、時間をおいて再度お試しください。";
+  }
+  if (
+    lower.includes("network") ||
+    lower.includes("fetch failed") ||
+    lower.includes("econnreset") ||
+    lower.includes("enotfound") ||
+    lower.includes("econnrefused")
+  ) {
+    return "ネットワークエラーが発生しました。通信環境を確認して再度お試しください。";
+  }
+  if (
+    lower.includes("api key") ||
+    lower.includes("permission") ||
+    lower.includes("unauthorized") ||
+    lower.includes("401") ||
+    lower.includes("403")
+  ) {
+    return "AI分析サービスへの接続に問題が発生しました。時間をおいて再度お試しください。";
+  }
+
+  return raw || "分析中にエラーが発生しました";
+}

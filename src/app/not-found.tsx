@@ -20,7 +20,7 @@ export default function NotFound() {
             <h1 className="text-2xl font-bold text-white tracking-tight text-center">
               ページが見つかりません
             </h1>
-            <p className="text-slate-400 text-sm mt-2 text-center">
+            <p className="text-slate-300 text-sm mt-2 text-center">
               お探しのページは移動または削除された可能性があります。
             </p>
           </div>
@@ -33,7 +33,7 @@ export default function NotFound() {
             トップに戻る
           </Link>
 
-          <p className="text-center text-slate-400 text-xs mt-6">
+          <p className="text-center text-slate-300 text-xs mt-6">
             Confidential · Finance AI System
           </p>
         </div>
