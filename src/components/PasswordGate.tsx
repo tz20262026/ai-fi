@@ -104,7 +104,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
             <h1 className="text-2xl font-bold text-white tracking-tight">
               AI財務アドバイザー
             </h1>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-300 text-sm mt-1">
               Powered by Gemini 2.5 Flash
             </p>
           </div>
@@ -173,7 +173,7 @@ export default function PasswordGate({ children }: PasswordGateProps) {
             </button>
           </form>
 
-          <p className="text-center text-slate-400 text-xs mt-6">
+          <p className="text-center text-slate-300 text-xs mt-6">
             Confidential · Finance AI System
           </p>
         </div>

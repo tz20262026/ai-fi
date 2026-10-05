@@ -171,7 +171,7 @@ export default function Home() {
               </div>
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight whitespace-nowrap">AI財務アドバイザー</h1>
-                <p className="text-slate-400 text-xs sm:text-sm flex items-center gap-1.5 mt-0.5">
+                <p className="text-slate-300 text-xs sm:text-sm flex items-center gap-1.5 mt-0.5">
                   <Sparkles className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" aria-hidden="true" />
                   Powered by Gemini 2.5 Flash
                 </p>
@@ -236,6 +236,9 @@ export default function Home() {
                     財務資料をアップロード
                   </h2>
                   <FileUpload onFileSelect={handleFileSelect} onClear={handleFileClear} disabled={false} />
+                  <p className="text-slate-300 text-xs mt-3 leading-relaxed">
+                    決算書・損益計算書・資産運用レポートなどをアップロードすると、約30秒でAIが財務サマリー・3つの提言・リスク要因をレポート化します。結果はPDF保存やコピーができ、同じモードで2回目以降は過去データとのトレンド比較も表示されます。
+                  </p>
                 </div>
 
                 {appState === "error" && (
@@ -255,7 +258,7 @@ export default function Home() {
             )}
           </div>
 
-          <p className="text-center text-slate-400 text-xs">
+          <p className="text-center text-slate-300 text-xs">
             このシステムはAIによる参考情報の提供を目的としています。実際の意思決定は専門家にご相談ください。
           </p>
         </div>

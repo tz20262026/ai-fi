@@ -131,7 +131,7 @@ function HistoryCard({
         )}
 
         {/* Meta */}
-        <div className="flex items-center gap-3 text-xs text-slate-400 mb-3">
+        <div className="flex items-center gap-3 text-xs text-slate-300 mb-3">
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             {formatDate(record.createdAt)}

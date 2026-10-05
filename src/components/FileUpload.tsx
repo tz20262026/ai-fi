@@ -100,7 +100,7 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
             {getFileIcon(selectedFile)}
             <div>
               <p className="text-white font-medium text-sm">{selectedFile.name}</p>
-              <p className="text-slate-400 text-xs mt-0.5">{formatSize(selectedFile.size)}</p>
+              <p className="text-slate-300 text-xs mt-0.5">{formatSize(selectedFile.size)}</p>
             </div>
             <button
               onClick={(e) => {
