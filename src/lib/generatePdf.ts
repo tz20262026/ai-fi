@@ -17,14 +17,14 @@ export async function generatePdf(elementId: string, filename: string): Promise<
   const imgW = canvas.width;
   const imgH = canvas.height;
 
-  // A4: 210 x 297 mm
+  // A4: 210 x 297 mm。常に標準A4サイズを使い、長いレポートは下の while で複数ページに分割する
+  // (以前は1ページがコンテンツ全体の高さになる特大サイズを使っていたため、印刷・銀行提出時に正しく出力できなかった)
   const pdfW = 210;
-  const pdfH = Math.ceil((imgH * pdfW) / imgW);
 
   const pdf = new jsPDF({
-    orientation: pdfH > pdfW ? "portrait" : "landscape",
+    orientation: "portrait",
     unit: "mm",
-    format: pdfH > 297 ? [pdfW, pdfH] : "a4",
+    format: "a4",
   });
 
   const pageH = pdf.internal.pageSize.getHeight();

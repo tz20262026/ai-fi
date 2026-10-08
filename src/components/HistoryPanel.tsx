@@ -324,8 +324,8 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
           </button>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-1 px-4 py-3 border-b border-slate-700/30">
+        {/* Filter tabs（狭いスマホ幅でラベルが折れて潰れないよう横スクロールにする） */}
+        <div className="flex gap-1 px-4 py-3 border-b border-slate-700/30 overflow-x-auto">
           {["all", "bank", "investment", "disaster"].map((m) => {
             const label = m === "all" ? "すべて" : (CONSULTANT_MODES[m as ConsultantMode]?.label ?? m);
             const count = m === "all" ? records.length : records.filter((r) => r.mode === m).length;
@@ -334,7 +334,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
                 key={m}
                 onClick={() => setFilterMode(m)}
                 className={cn(
-                  "px-2.5 py-1 text-xs rounded-lg transition-all",
+                  "px-2.5 py-1 text-xs rounded-lg transition-all whitespace-nowrap flex-shrink-0",
                   filterMode === m ? "bg-blue-600/30 text-blue-300 border border-blue-500/30" : "text-slate-300 hover:text-slate-200"
                 )}
               >
