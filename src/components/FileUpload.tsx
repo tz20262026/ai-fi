@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, Camera, FileText, ImageIcon, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,8 +15,23 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // 選択中のファイルが画像の場合のみサムネイル用URLを生成し、
+  // ファイルが変わる・解除される度に必ずURLを解放してメモリリークを防ぐ
+  useEffect(() => {
+    if (!selectedFile || !selectedFile.type.startsWith("image/")) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(selectedFile);
+    setPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [selectedFile]);
 
   const handleFile = useCallback(
     (file: File) => {
@@ -97,7 +112,16 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
       >
         {selectedFile ? (
           <div className="flex flex-col items-center gap-3">
-            {getFileIcon(selectedFile)}
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- Blob URLはnext/imageの最適化対象外のためimgタグを使用
+              <img
+                src={previewUrl}
+                alt="選択した画像のプレビュー"
+                className="w-14 h-14 rounded-xl object-cover"
+              />
+            ) : (
+              getFileIcon(selectedFile)
+            )}
             <div>
               <p className="text-white font-medium text-sm">{selectedFile.name}</p>
               <p className="text-slate-300 text-xs mt-0.5">{formatSize(selectedFile.size)}</p>
@@ -107,6 +131,7 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
                 e.stopPropagation();
                 setSelectedFile(null);
                 setValidationError(null);
+                setPreviewUrl(null);
                 if (fileInputRef.current) fileInputRef.current.value = "";
                 onClear?.();
               }}

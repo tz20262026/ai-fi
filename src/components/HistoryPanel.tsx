@@ -202,6 +202,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
   const [records, setRecords] = useState<AnalysisRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterMode, setFilterMode] = useState<string>("all");
+  const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   const fetchHistory = useCallback(() => {
@@ -210,7 +211,7 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
     setLoading(false);
   }, []);
 
-  useEffect(() => { if (isOpen) fetchHistory(); }, [isOpen, fetchHistory]);
+  useEffect(() => { if (isOpen) fetchHistory(); else setConfirmingDeleteAll(false); }, [isOpen, fetchHistory]);
 
   // パネル表示中は Esc で閉じられるようにし、背面のスクロールをロックする
   useEffect(() => {
@@ -232,6 +233,15 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
   const handleDelete = (id: string) => {
     localHistory.remove(id);
     setRecords((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  /** 全件削除。localHistory.tsには一括削除APIがないため、全件のidを取得してremoveをループ呼び出しする */
+  const handleDeleteAll = () => {
+    for (const r of records) {
+      localHistory.remove(r.id);
+    }
+    setRecords([]);
+    setConfirmingDeleteAll(false);
   };
 
   /** 呼び出し元（HistoryCard）でインライン表示するため、成功時はnull・失敗時はエラーメッセージを返す */
@@ -319,9 +329,37 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
               </span>
             )}
           </div>
-          <button ref={closeBtnRef} onClick={onClose} aria-label="履歴パネルを閉じる" className="text-slate-400 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {records.length > 0 && (
+              confirmingDeleteAll ? (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handleDeleteAll}
+                    className="text-xs px-2 py-1 rounded-md bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-colors whitespace-nowrap"
+                  >
+                    すべて削除する
+                  </button>
+                  <button
+                    onClick={() => setConfirmingDeleteAll(false)}
+                    className="text-xs px-2 py-1 rounded-md bg-slate-700/60 text-slate-300 hover:bg-slate-700 transition-colors whitespace-nowrap"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmingDeleteAll(true)}
+                  aria-label="すべての履歴を削除"
+                  className="text-slate-400 hover:text-red-400 transition-colors p-1"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )
+            )}
+            <button ref={closeBtnRef} onClick={onClose} aria-label="履歴パネルを閉じる" className="text-slate-400 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Filter tabs（狭いスマホ幅でラベルが折れて潰れないよう横スクロールにする） */}

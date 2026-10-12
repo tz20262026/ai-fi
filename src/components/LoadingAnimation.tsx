@@ -23,14 +23,16 @@ export default function LoadingAnimation({ mode, onCancel }: LoadingAnimationPro
   const config = CONSULTANT_MODES[mode];
 
   useEffect(() => {
+    // 約30秒の分析時間を想定したペース（5ステップ×6秒=30秒で全ステップ完了）
     const stepInterval = setInterval(() => {
       setStep((prev) => Math.min(prev + 1, STEPS.length - 1));
-    }, 2400);
+    }, 6000);
 
+    // 約30秒の分析時間を想定したペース（平均で92%到達まで約27〜28秒かかるよう緩める）
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 92) return prev;
-        return prev + Math.random() * 3;
+        return prev + Math.random() * 2;
       });
     }, 300);
 

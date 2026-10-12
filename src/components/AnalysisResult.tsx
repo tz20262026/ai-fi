@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Star, RefreshCw, Copy, Check, ArrowLeft, FileDown } from "lucide-react";
+import { ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Star, RefreshCw, Copy, Check, ArrowLeft, FileDown, Info } from "lucide-react";
 import { createPortal } from "react-dom";
 import { CONSULTANT_MODES, ConsultantMode } from "@/lib/prompts";
 import { cn } from "@/lib/utils";
@@ -68,10 +68,35 @@ function formatKey(key: string): string {
   return map[key] || key;
 }
 
+// 財務用語の一言説明（専門知識がないユーザー向け）。該当なしはnullを返す
+const DESC_MAP: Record<string, string> = {
+  sales: "会社が1年間に稼いだ売上の総額",
+  operating_profit: "本業の儲けを示す利益。売上から売上原価・販管費を引いた金額",
+  net_profit: "税金等すべてを引いた後、最終的に残る利益",
+  total_assets: "会社が持つ資産（現金・設備・在庫など）の合計額",
+  equity_ratio: "総資産のうち自己資金で調達した割合。高いほど財務的に安全",
+  debt_service_coverage: "借入金を何年で返済できるかの指標。短いほど良好",
+  ebitda: "税金・金利・減価償却前の利益。本業の収益力を示す",
+  fcf: "事業で生み出した現金から投資分を引いた、自由に使えるお金",
+  revenue_growth: "前年と比べて売上がどれだけ伸びたかを示す割合",
+  operating_margin: "売上に対する営業利益の割合。本業の収益効率を示す",
+  roe: "自己資本に対してどれだけ効率的に利益を生んだかを示す指標",
+  pre_disaster_sales: "災害が起こる前の時点での売上高",
+  estimated_loss: "災害によって発生したと見積もられる損害の金額",
+  available_insurance: "保険契約に基づいて受け取れる見込みの保険金額",
+  subsidy_potential: "活用できる可能性がある補助金の金額",
+  recovery_timeline: "事業が復旧するまでに想定される期間",
+};
+
+function getDesc(key: string): string | null {
+  return DESC_MAP[key] || null;
+}
+
 export default function AnalysisResult({ mode, rawText, parsedData, onReset }: AnalysisResultProps) {
   const [showRaw, setShowRaw] = useState(false);
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [openDescKey, setOpenDescKey] = useState<string | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
   const config = CONSULTANT_MODES[mode];
   const recs: Recommendation[] = parsedData?.recommendations || [];
@@ -105,7 +130,8 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
       const { generatePdf } = await import("@/lib/generatePdf");
       pdfRef.current.style.display = "block";
       await new Promise((r) => setTimeout(r, 100)); // ensure render
-      const company = parsedData?.company_name ?? "report";
+      // ファイル名に使えない文字（/ \ : * ? " < > |）をアンダースコアに置換
+      const company = (parsedData?.company_name ?? "report").replace(/[/\\:*?"<>|]/g, "_");
       const date = new Date().toISOString().slice(0, 10);
       await generatePdf("pdf-print-area", `財務分析_${company}_${date}.pdf`);
     } finally {
@@ -186,12 +212,39 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
             財務サマリー
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {Object.entries(parsedData.financial_summary).map(([key, val]) => (
-              <div key={key} className="bg-slate-900/50 rounded-lg p-3">
-                <p className="text-slate-300 text-xs mb-1">{formatKey(key)}</p>
-                <p className="text-white font-bold text-sm leading-tight">{String(val)}</p>
-              </div>
-            ))}
+            {Object.entries(parsedData.financial_summary).map(([key, val]) => {
+              const desc = getDesc(key);
+              const isOpen = openDescKey === key;
+              return (
+                <div key={key} className="relative bg-slate-900/50 rounded-lg p-3 group">
+                  <div className="flex items-center gap-1 mb-1">
+                    <p className="text-slate-300 text-xs">{formatKey(key)}</p>
+                    {desc && (
+                      <button
+                        type="button"
+                        onClick={() => setOpenDescKey(isOpen ? null : key)}
+                        aria-label={`${formatKey(key)}の説明を表示`}
+                        aria-expanded={isOpen}
+                        className="text-slate-500 hover:text-blue-300 transition-colors flex-shrink-0"
+                      >
+                        <Info className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-white font-bold text-sm leading-tight">{String(val)}</p>
+                  {desc && (
+                    <div
+                      className={cn(
+                        "absolute left-0 top-full mt-1 z-10 w-56 rounded-lg border border-slate-600/50 bg-slate-800 px-3 py-2 text-xs text-slate-200 leading-relaxed shadow-lg transition-opacity",
+                        isOpen ? "opacity-100" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                      )}
+                    >
+                      {desc}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
