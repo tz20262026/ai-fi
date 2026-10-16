@@ -93,7 +93,8 @@ function getDesc(key: string): string | null {
 }
 
 export default function AnalysisResult({ mode, rawText, parsedData, onReset }: AnalysisResultProps) {
-  const [showRaw, setShowRaw] = useState(false);
+  // 構造化データの解析に失敗した場合、ユーザーが空白の画面に見えてしまわないよう全文を最初から開く
+  const [showRaw, setShowRaw] = useState(!parsedData);
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [openDescKey, setOpenDescKey] = useState<string | null>(null);
@@ -235,7 +236,8 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
                   {desc && (
                     <div
                       className={cn(
-                        "absolute left-0 top-full mt-1 z-10 w-56 rounded-lg border border-slate-600/50 bg-slate-800 px-3 py-2 text-xs text-slate-200 leading-relaxed shadow-lg transition-opacity",
+                        // grid-cols-2(モバイル)の右列カードだとleft-0だと画面外に飛び出すため中央寄せ+viewport幅でクランプする
+                        "absolute left-1/2 -translate-x-1/2 top-full mt-1 z-10 w-56 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-600/50 bg-slate-800 px-3 py-2 text-xs text-slate-200 leading-relaxed shadow-lg transition-opacity",
                         isOpen ? "opacity-100" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
                       )}
                     >
