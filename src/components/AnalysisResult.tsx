@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Star, RefreshCw, Copy, Check, ArrowLeft, FileDown, Info } from "lucide-react";
 import { createPortal } from "react-dom";
 import { CONSULTANT_MODES, ConsultantMode } from "@/lib/prompts";
@@ -99,8 +99,36 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
   const [pdfLoading, setPdfLoading] = useState(false);
   const [openDescKey, setOpenDescKey] = useState<string | null>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
+  const openDescCardRef = useRef<HTMLDivElement>(null);
   const config = CONSULTANT_MODES[mode];
   const recs: Recommendation[] = parsedData?.recommendations || [];
+
+  // モバイルではhoverで閉じないため、スマホで財務用語ツールチップを開いた後も
+  // Escapeキー or カード外クリック/タップで閉じられるようにする
+  useEffect(() => {
+    if (!openDescKey) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenDescKey(null);
+    };
+    const handlePointerDown = (e: MouseEvent) => {
+      const target = e.target as Element;
+      // 他の情報ボタン（別カードのトグルも含む）のクリックはボタン自身のonClickに
+      // 開閉を任せる。ここで先にnullを入れると別カードへの切り替えが効かなくなる
+      if (target.closest("[data-desc-toggle]")) return;
+      const card = openDescCardRef.current;
+      if (card && !card.contains(target)) {
+        setOpenDescKey(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("click", handlePointerDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("click", handlePointerDown);
+    };
+  }, [openDescKey]);
 
   const handleCopy = async () => {
     try {
@@ -217,12 +245,17 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
               const desc = getDesc(key);
               const isOpen = openDescKey === key;
               return (
-                <div key={key} className="relative bg-slate-900/50 rounded-lg p-3 group">
+                <div
+                  key={key}
+                  ref={isOpen ? openDescCardRef : undefined}
+                  className="relative bg-slate-900/50 rounded-lg p-3 group"
+                >
                   <div className="flex items-center gap-1 mb-1">
                     <p className="text-slate-300 text-xs">{formatKey(key)}</p>
                     {desc && (
                       <button
                         type="button"
+                        data-desc-toggle
                         onClick={() => setOpenDescKey(isOpen ? null : key)}
                         aria-label={`${formatKey(key)}の説明を表示`}
                         aria-expanded={isOpen}
