@@ -76,7 +76,7 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
     if (file.type === "application/pdf") return <FileText className="w-8 h-8 text-red-400" />;
     if (name.endsWith(".doc") || name.endsWith(".docx")) return <FileText className="w-8 h-8 text-blue-500" />;
     if (name.endsWith(".xls") || name.endsWith(".xlsx")) return <FileText className="w-8 h-8 text-emerald-400" />;
-    if (name.endsWith(".txt")) return <FileText className="w-8 h-8 text-slate-400" />;
+    if (name.endsWith(".txt")) return <FileText className="w-8 h-8 text-slate-300" />;
     return <ImageIcon className="w-8 h-8 text-blue-400" />;
   };
 
@@ -148,7 +148,7 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
             )}>
               <Upload className={cn(
                 "w-7 h-7 transition-colors",
-                isDragging ? "text-blue-400" : "text-slate-400"
+                isDragging ? "text-blue-400" : "text-slate-300"
               )} />
             </div>
             <div>

@@ -42,12 +42,14 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             </p>
           </div>
 
-          {/* 開発環境のみ詳細を表示（本番では詳細を隠す） */}
-          {process.env.NODE_ENV === "development" && (
+          {/* エラー詳細（本文は開発環境のみ・digestは本番でも運用の手がかりとして表示） */}
+          {(process.env.NODE_ENV === "development" || error.digest) && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-6">
-              <p className="text-red-300 text-xs font-mono break-all">
-                {error.message}
-              </p>
+              {process.env.NODE_ENV === "development" && (
+                <p className="text-red-300 text-xs font-mono break-all">
+                  {error.message}
+                </p>
+              )}
               {error.digest && (
                 <p className="text-red-300/70 text-xs font-mono mt-1">
                   digest: {error.digest}

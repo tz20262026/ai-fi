@@ -259,7 +259,7 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
                         onClick={() => setOpenDescKey(isOpen ? null : key)}
                         aria-label={`${formatKey(key)}の説明を表示`}
                         aria-expanded={isOpen}
-                        className="text-slate-500 hover:text-blue-300 transition-colors flex-shrink-0"
+                        className="text-slate-300 hover:text-blue-300 transition-colors flex-shrink-0"
                       >
                         <Info className="w-3 h-3" />
                       </button>

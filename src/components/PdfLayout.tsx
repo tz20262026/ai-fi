@@ -81,7 +81,7 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
       }}
     >
       {/* Header bar */}
-      <div style={{ borderBottom: "3px solid #1d4ed8", paddingBottom: "20px", marginBottom: "28px" }}>
+      <div data-pdf-section="header" style={{ borderBottom: "3px solid #1d4ed8", paddingBottom: "20px", marginBottom: "28px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: "11px", color: "#64748b", letterSpacing: "0.1em", marginBottom: "4px" }}>
@@ -115,7 +115,7 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
 
       {/* Financial summary */}
       {Object.keys(summary).length > 0 && (
-        <div style={{ marginBottom: "28px" }}>
+        <div data-pdf-section="summary" style={{ marginBottom: "28px" }}>
           <h2 style={{ fontSize: "14px", fontWeight: "bold", color: "#1e293b", borderLeft: "4px solid #1d4ed8", paddingLeft: "10px", margin: "0 0 14px 0" }}>
             財務サマリー
           </h2>
@@ -132,7 +132,7 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
 
       {/* 3 Recommendations */}
       {recs.length > 0 && (
-        <div style={{ marginBottom: "28px" }}>
+        <div data-pdf-section="recommendations" style={{ marginBottom: "28px" }}>
           <h2 style={{ fontSize: "14px", fontWeight: "bold", color: "#1e293b", borderLeft: "4px solid #f59e0b", paddingLeft: "10px", margin: "0 0 14px 0" }}>
             コンサルタントの提言
           </h2>
@@ -161,7 +161,7 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
 
       {/* Strengths & Risks */}
       {(positiveItems?.length || negativeItems?.length) ? (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "28px" }}>
+        <div data-pdf-section="strengths-risks" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "28px" }}>
           {positiveItems && positiveItems.length > 0 && (
             <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px", padding: "14px" }}>
               <div style={{ fontSize: "12px", fontWeight: "700", color: "#16a34a", marginBottom: "8px" }}>
@@ -185,7 +185,7 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
 
       {/* Encouraging message */}
       {mode === "disaster" && parsedData?.encouraging_message && (
-        <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "8px", padding: "14px 16px", marginBottom: "28px" }}>
+        <div data-pdf-section="encouraging" style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "8px", padding: "14px 16px", marginBottom: "28px" }}>
           <div style={{ fontSize: "12px", color: "#c2410c", fontStyle: "italic" }}>
             「{parsedData.encouraging_message}」
           </div>
@@ -193,7 +193,7 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
       )}
 
       {/* Full report text */}
-      <div style={{ marginBottom: "28px" }}>
+      <div data-pdf-section="report" style={{ marginBottom: "28px" }}>
         <h2 style={{ fontSize: "14px", fontWeight: "bold", color: "#1e293b", borderLeft: "4px solid #64748b", paddingLeft: "10px", margin: "0 0 14px 0" }}>
           詳細分析レポート
         </h2>
@@ -203,7 +203,7 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div data-pdf-section="footer" style={{ borderTop: "1px solid #e2e8f0", paddingTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontSize: "10px", color: "#94a3b8" }}>
           AI財務アドバイザー　Powered by Gemini 2.5 Flash
         </div>

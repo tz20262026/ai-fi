@@ -107,7 +107,7 @@ function HistoryCard({
               <button
                 onClick={() => setConfirmingDelete(true)}
                 aria-label="この履歴を削除"
-                className="text-slate-500 hover:text-red-400 transition-colors p-1"
+                className="text-slate-300 hover:text-red-400 transition-colors p-1"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -179,7 +179,7 @@ function HistoryCard({
             <button
               onClick={() => setExpanded(!expanded)}
               aria-label={expanded ? "詳細を閉じる" : "詳細を開く"}
-              className="px-2 text-slate-400 hover:text-slate-200 transition-colors"
+              className="px-2 text-slate-300 hover:text-slate-200 transition-colors"
             >
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -350,13 +350,13 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
                 <button
                   onClick={() => setConfirmingDeleteAll(true)}
                   aria-label="すべての履歴を削除"
-                  className="text-slate-400 hover:text-red-400 transition-colors p-1"
+                  className="text-slate-300 hover:text-red-400 transition-colors p-1"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               )
             )}
-            <button ref={closeBtnRef} onClick={onClose} aria-label="履歴パネルを閉じる" className="text-slate-400 hover:text-white transition-colors">
+            <button ref={closeBtnRef} onClick={onClose} aria-label="履歴パネルを閉じる" className="text-slate-300 hover:text-white transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
