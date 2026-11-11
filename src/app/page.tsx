@@ -57,6 +57,9 @@ export default function Home() {
     // 前回分のAbortControllerが残っていないか念のためクリアしてから新規作成
     const controller = new AbortController();
     abortControllerRef.current = controller;
+    // サーバー側のmaxDuration(60秒)より少し長めに設定し、応答が返らないまま
+    // ローディング画面が永久に残ることを防ぐ。reasonに"timeout"を入れて手動キャンセルと区別する
+    const timeoutId = setTimeout(() => controller.abort("timeout"), 65000);
 
     try {
       // 「過去履歴との比較」用に、直近3件の完了済みレコードをlocalStorageから読み出して送る
@@ -121,15 +124,22 @@ export default function Home() {
       setAppState("result");
     } catch (err: unknown) {
       // ユーザーがキャンセルボタンを押した場合はエラー扱いにせず、
-      // ファイル選択・モードを維持したまま選択画面にそのまま戻す
+      // ファイル選択・モードを維持したまま選択画面にそのまま戻す。
+      // タイムアウトによる自動abortの場合だけ、原因が分かるエラーメッセージを表示する
       if (err instanceof DOMException && err.name === "AbortError") {
-        setAppState("idle");
+        if (controller.signal.reason === "timeout") {
+          setErrorMsg("応答がありません。通信環境を確認するか、しばらく待って再度お試しください。");
+          setAppState("error");
+        } else {
+          setAppState("idle");
+        }
         return;
       }
       const message = err instanceof Error ? err.message : "予期しないエラーが発生しました";
       setErrorMsg(message);
       setAppState("error");
     } finally {
+      clearTimeout(timeoutId);
       abortControllerRef.current = null;
     }
   };

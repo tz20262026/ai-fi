@@ -71,6 +71,19 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
 
   const onDragLeave = () => setIsDragging(false);
 
+  // クリップボードに画像をコピーした状態でドロップゾーンにフォーカスし Ctrl+V / Cmd+V した場合に対応。
+  // 画像以外の通常のテキストペースト等と区別するため、画像ファイルが取れなければ何もしない
+  const onPaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      if (disabled) return;
+      const file = Array.from(e.clipboardData?.files ?? []).find((f) =>
+        f.type.startsWith("image/")
+      );
+      if (file) handleFile(file);
+    },
+    [disabled, handleFile]
+  );
+
   const getFileIcon = (file: File) => {
     const name = file.name.toLowerCase();
     if (file.type === "application/pdf") return <FileText className="w-8 h-8 text-red-400" />;
@@ -94,6 +107,7 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
+        onPaste={onPaste}
         onClick={() => !disabled && fileInputRef.current?.click()}
         onKeyDown={(e) => {
           if (disabled) return;
@@ -159,6 +173,7 @@ export default function FileUpload({ onFileSelect, onClear, disabled }: FileUplo
                 または<span className="text-blue-400 hover:underline">クリックして選択</span>
               </p>
               <p className="text-slate-300 text-xs mt-2">PDF · Image · Word · Excel · Text（最大20MB）</p>
+              <p className="text-slate-300 text-xs mt-1">画像はコピーした内容を貼り付け（Ctrl+V）も可能です</p>
             </div>
           </div>
         )}

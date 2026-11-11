@@ -20,6 +20,8 @@ interface LoadingAnimationProps {
 export default function LoadingAnimation({ mode, onCancel }: LoadingAnimationProps) {
   const [step, setStep] = useState(0);
   const [progress, setProgress] = useState(0);
+  // 想定（約30秒）より分析が長引いた場合に安心メッセージを出すための経過秒数カウント
+  const [elapsedSec, setElapsedSec] = useState(0);
   const config = CONSULTANT_MODES[mode];
 
   useEffect(() => {
@@ -29,11 +31,13 @@ export default function LoadingAnimation({ mode, onCancel }: LoadingAnimationPro
     }, 6000);
 
     // 約30秒の分析時間を想定したペース（平均で92%到達まで約27〜28秒かかるよう緩める）
+    // 経過秒数も同じ300ms間隔に相乗りしてカウントする（新規タイマーは増やさない）
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 92) return prev;
         return prev + Math.random() * 2;
       });
+      setElapsedSec((prev) => prev + 0.3);
     }, 300);
 
     return () => {
@@ -112,6 +116,15 @@ export default function LoadingAnimation({ mode, onCancel }: LoadingAnimationPro
           </div>
         ))}
       </div>
+
+      {/* 想定（約30秒）より分析が長引いた場合の安心メッセージ。aria-live="polite"な親要素内にあるためスクリーンリーダーにも読み上げられる */}
+      {elapsedSec >= 30 && (
+        <p className="text-xs text-slate-300 text-center max-w-sm">
+          {elapsedSec >= 50
+            ? "大きなファイルや複雑な資料の場合、分析に時間がかかることがあります。"
+            : "通常より時間がかかっています。もう少しお待ちください。"}
+        </p>
+      )}
 
       {/* Progress bar */}
       <div className="w-full max-w-sm space-y-1.5">

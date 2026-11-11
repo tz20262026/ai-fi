@@ -261,11 +261,26 @@ export default function HistoryPanel({ isOpen, onClose, onRestore, onRetryComple
       rawText: r.rawText,
     }));
 
-    const res = await fetch("/api/analyze/retry", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: record.mode, fileData: record.fileData, fileMimeType: record.fileMimeType, historyContext }),
-    });
+    // サーバー側のmaxDuration(60秒)より少し長めに設定し、応答が返らないまま
+    // 「分析中」の表示が永久に残ることを防ぐ。reasonに"timeout"を入れて他のabort要因と区別する
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort("timeout"), 65000);
+    let res: Response;
+    try {
+      res = await fetch("/api/analyze/retry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: record.mode, fileData: record.fileData, fileMimeType: record.fileMimeType, historyContext }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError" && controller.signal.reason === "timeout") {
+        return "応答がありません。通信環境を確認するか、しばらく待って再度お試しください。";
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
     const data = await res.json();
     if (res.status === 429) {
       // コスト防御のレート制限による一時的な拒否。連打対策なのでレコードは「未分析」のままにし、
