@@ -12,6 +12,7 @@ interface ParsedData {
   credit_score?: string;
   investment_rating?: string;
   recovery_stage?: string;
+  priority_actions?: string;
   loan_opinion?: string;
   encouraging_message?: string;
   strengths?: string[];
@@ -33,6 +34,63 @@ const PRIORITY_COLOR: Record<string, string> = {
   中: "#f59e0b",
   低: "#22c55e",
 };
+
+type BadgeTone = "positive" | "neutral" | "negative";
+
+const BADGE_TONE_STYLE: Record<BadgeTone, { background: string; color: string }> = {
+  positive: { background: "#d1fae5", color: "#047857" },
+  neutral: { background: "#fef3c7", color: "#b45309" },
+  negative: { background: "#fee2e2", color: "#b91c1c" },
+};
+
+// AnalysisResult.tsxのgetBadgeToneと同じ判定ロジック。「非推奨」が「推奨」を部分文字列として
+// 含むなど表記が入れ子になっているため、ネガティブ判定を必ず先に行う
+function getBadgeTone(value: string): BadgeTone {
+  if (
+    value.includes("D") ||
+    value.includes("要再検討") ||
+    value.includes("非推薦") ||
+    value.includes("非推奨") ||
+    value.includes("緊急期")
+  ) {
+    return "negative";
+  }
+  if (
+    value.includes("A") ||
+    value.includes("融資推薦") ||
+    value.includes("推奨") ||
+    value.includes("発展期")
+  ) {
+    return "positive";
+  }
+  return "neutral";
+}
+
+interface MetaBadge {
+  text: string;
+  tone: BadgeTone;
+}
+
+function buildMetaBadges(mode: ConsultantMode, parsedData: ParsedData | null): MetaBadge[] {
+  if (!parsedData) return [];
+  if (mode === "bank") {
+    const badges: MetaBadge[] = [];
+    if (parsedData.credit_score) {
+      badges.push({ text: `信用スコア: ${parsedData.credit_score}`, tone: getBadgeTone(parsedData.credit_score) });
+    }
+    if (parsedData.loan_opinion) {
+      badges.push({ text: parsedData.loan_opinion, tone: getBadgeTone(parsedData.loan_opinion) });
+    }
+    return badges;
+  }
+  if (mode === "investment" && parsedData.investment_rating) {
+    return [{ text: parsedData.investment_rating, tone: getBadgeTone(parsedData.investment_rating) }];
+  }
+  if (mode === "disaster" && parsedData.recovery_stage) {
+    return [{ text: parsedData.recovery_stage, tone: getBadgeTone(parsedData.recovery_stage) }];
+  }
+  return [];
+}
 
 function formatKey(key: string): string {
   const map: Record<string, string> = {
@@ -56,13 +114,7 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
   const positiveItems = parsedData?.strengths ?? parsedData?.growth_catalysts ?? parsedData?.support_programs;
   const negativeItems = parsedData?.risk_factors ?? parsedData?.key_risks;
 
-  const getMetaBadge = () => {
-    if (mode === "bank") return parsedData?.credit_score ? `信用スコア: ${parsedData.credit_score}` : parsedData?.loan_opinion ?? null;
-    if (mode === "investment") return parsedData?.investment_rating ?? null;
-    if (mode === "disaster") return parsedData?.recovery_stage ?? null;
-    return null;
-  };
-  const metaBadge = getMetaBadge();
+  const metaBadges = buildMetaBadges(mode, parsedData);
 
   // Strip JSON blocks from rawText for clean display
   const cleanText = rawText.replace(/```json[\s\S]*?```/g, "").trim();
@@ -99,14 +151,21 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
           <div style={{ textAlign: "right", fontSize: "12px", color: "#64748b" }}>
             <div>作成日：{today}</div>
             <div>分析モード：{config.label}</div>
-            {metaBadge && (
-              <div style={{
-                marginTop: "6px", display: "inline-block",
-                background: "#dbeafe", color: "#1d4ed8",
-                padding: "2px 10px", borderRadius: "4px",
-                fontWeight: "600", fontSize: "12px",
-              }}>
-                {metaBadge}
+            {metaBadges.length > 0 && (
+              <div style={{ marginTop: "6px", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+                {metaBadges.map((badge) => (
+                  <div
+                    key={badge.text}
+                    style={{
+                      display: "inline-block",
+                      ...BADGE_TONE_STYLE[badge.tone],
+                      padding: "2px 10px", borderRadius: "4px",
+                      fontWeight: "600", fontSize: "12px",
+                    }}
+                  >
+                    {badge.text}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -182,6 +241,18 @@ export default function PdfLayout({ mode, rawText, parsedData, companyName }: Pd
           )}
         </div>
       ) : null}
+
+      {/* Priority actions: encouraging_messageと区別するため青系の色にする */}
+      {mode === "disaster" && parsedData?.priority_actions && (
+        <div data-pdf-section="priority-actions" style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "8px", padding: "14px 16px", marginBottom: "28px" }}>
+          <div style={{ fontSize: "12px", fontWeight: "700", color: "#1d4ed8", marginBottom: "4px" }}>
+            ⚡ 最優先アクション
+          </div>
+          <div style={{ fontSize: "12px", color: "#374151", lineHeight: 1.8 }}>
+            {parsedData.priority_actions}
+          </div>
+        </div>
+      )}
 
       {/* Encouraging message */}
       {mode === "disaster" && parsedData?.encouraging_message && (

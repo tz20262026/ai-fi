@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Star, RefreshCw, Copy, Check, ArrowLeft, FileDown, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Star, RefreshCw, Copy, Check, ArrowLeft, FileDown, Info, Zap } from "lucide-react";
 import { createPortal } from "react-dom";
 import { CONSULTANT_MODES, ConsultantMode } from "@/lib/prompts";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,63 @@ const PRIORITY_CONFIG = {
 };
 
 const CARD_ICONS = ["💡", "🎯", "🚀"];
+
+type BadgeTone = "positive" | "neutral" | "negative";
+
+const BADGE_TONE_CLASS: Record<BadgeTone, string> = {
+  positive: "bg-emerald-500/20 border-emerald-500/30 text-emerald-300",
+  neutral: "bg-amber-500/20 border-amber-500/30 text-amber-300",
+  negative: "bg-red-500/20 border-red-500/30 text-red-300",
+};
+
+// 評価系バッジ（信用スコア・融資判定・投資判定・復旧ステージ）の色を値の意味から判定する。
+// 「非推奨」が「推奨」を部分文字列として含むなど表記が入れ子になっているため、ネガティブ判定を必ず先に行う
+function getBadgeTone(value: string): BadgeTone {
+  if (
+    value.includes("D") ||
+    value.includes("要再検討") ||
+    value.includes("非推薦") ||
+    value.includes("非推奨") ||
+    value.includes("緊急期")
+  ) {
+    return "negative";
+  }
+  if (
+    value.includes("A") ||
+    value.includes("融資推薦") ||
+    value.includes("推奨") ||
+    value.includes("発展期")
+  ) {
+    return "positive";
+  }
+  return "neutral";
+}
+
+interface MetaBadge {
+  text: string;
+  tone: BadgeTone;
+}
+
+function buildMetaBadges(mode: ConsultantMode, parsedData: ParsedData | null): MetaBadge[] {
+  if (!parsedData) return [];
+  if (mode === "bank") {
+    const badges: MetaBadge[] = [];
+    if (parsedData.credit_score) {
+      badges.push({ text: `信用スコア: ${parsedData.credit_score}`, tone: getBadgeTone(parsedData.credit_score) });
+    }
+    if (parsedData.loan_opinion) {
+      badges.push({ text: parsedData.loan_opinion, tone: getBadgeTone(parsedData.loan_opinion) });
+    }
+    return badges;
+  }
+  if (mode === "investment" && parsedData.investment_rating) {
+    return [{ text: parsedData.investment_rating, tone: getBadgeTone(parsedData.investment_rating) }];
+  }
+  if (mode === "disaster" && parsedData.recovery_stage) {
+    return [{ text: parsedData.recovery_stage, tone: getBadgeTone(parsedData.recovery_stage) }];
+  }
+  return [];
+}
 
 function formatKey(key: string): string {
   const map: Record<string, string> = {
@@ -170,15 +227,7 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
   };
 
   // Extract key metadata
-  const getMetaBadge = () => {
-    if (!parsedData) return null;
-    if (mode === "bank") return parsedData.credit_score ? `信用スコア: ${parsedData.credit_score}` : null;
-    if (mode === "investment") return parsedData.investment_rating as string;
-    if (mode === "disaster") return parsedData.recovery_stage as string;
-    return null;
-  };
-
-  const metaBadge = getMetaBadge();
+  const metaBadges = buildMetaBadges(mode, parsedData);
 
   return (
     <div className="space-y-6">
@@ -226,10 +275,20 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
             <p className="text-slate-300 text-sm">{config.label}モード</p>
           </div>
         </div>
-        {metaBadge && (
-          <span className="px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 text-blue-300 text-sm font-semibold rounded-lg">
-            {metaBadge}
-          </span>
+        {metaBadges.length > 0 && (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {metaBadges.map((badge) => (
+              <span
+                key={badge.text}
+                className={cn(
+                  "px-3 py-1.5 border text-sm font-semibold rounded-lg",
+                  BADGE_TONE_CLASS[badge.tone]
+                )}
+              >
+                {badge.text}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
@@ -355,6 +414,18 @@ export default function AnalysisResult({ mode, rawText, parsedData, onReset }: A
           </div>
         );
       })()}
+
+      {/* Priority actions for disaster mode: encouraging_messageと区別するためsky系の色にする */}
+      {mode === "disaster" && parsedData?.priority_actions && (
+        <div className="bg-sky-500/10 border border-sky-500/30 rounded-xl p-5">
+          <h4 className="text-sky-300 font-semibold text-sm mb-2 flex items-center gap-1.5">
+            <Zap className="w-4 h-4" /> 最優先アクション
+          </h4>
+          <p className="text-slate-200 text-sm leading-relaxed">
+            {String(parsedData.priority_actions)}
+          </p>
+        </div>
+      )}
 
       {/* Encouraging message for disaster mode */}
       {mode === "disaster" && parsedData?.encouraging_message && (
