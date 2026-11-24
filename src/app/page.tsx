@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { TrendingUp, Sparkles, History, Lock } from "lucide-react";
 import PasswordGate from "@/components/PasswordGate";
 import ModeSelector from "@/components/ModeSelector";
@@ -30,6 +30,14 @@ export default function Home() {
   const [historyOpen, setHistoryOpen] = useState(false);
   // 分析中のfetchをキャンセルできるようにコンポーネントスコープで保持する
   const abortControllerRef = useRef<AbortController | null>(null);
+  // モバイルでボタンをタップした位置と、分析開始/完了後に表示が切り替わる位置がずれるため、
+  // 状態が変わるたびにメインカードを確実に視界内へ入れる
+  const mainCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (appState === "idle") return;
+    mainCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [appState]);
 
   const handleFileSelect = useCallback((file: File) => {
     setSelectedFile(file);
@@ -219,8 +227,13 @@ export default function Home() {
             </div>
           )}
 
+          {/* スクリーンリーダー向け：ローディング→結果/エラーの切り替わりを読み上げる（視覚的には非表示） */}
+          <p role="status" aria-live="polite" className="sr-only">
+            {appState === "result" ? "分析が完了しました" : appState === "error" ? `エラーが発生しました: ${errorMsg}` : ""}
+          </p>
+
           {/* Main card */}
-          <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 shadow-xl">
+          <div ref={mainCardRef} className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 shadow-xl">
             {appState === "loading" ? (
               <LoadingAnimation mode={mode} onCancel={handleCancelAnalyze} />
             ) : appState === "result" && analysisData ? (
